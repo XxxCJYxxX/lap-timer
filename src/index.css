@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+/* ── Apple Design System ── */
+:root {
+  --glass-bg: rgba(28, 28, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --surface: #1C1C1E;
+  --surface-elevated: #2C2C2E;
+  --accent: #0A84FF;
+  --accent-purple: #BF5AF2;
+  --green: #30D158;
+  --yellow: #FFD60A;
+  --red: #FF453A;
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.38);
+  --separator: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  background: #000;
+  color: var(--text-primary);
+  overscroll-behavior: none;
+}
+
+/* ── Glass panel ── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-strong {
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+/* ── Apple-style segmented control ── */
+.segmented {
+  display: inline-flex;
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 8.93px;
+  padding: 2px;
+}
+
+.segmented button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  white-space: nowrap;
+}
+
+.segmented button.active {
+  background: #636366;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  min-width: 44px;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1A90FF;
+}
+
+.btn-danger {
+  background: rgba(255, 69, 58, 0.2);
+  color: var(--red);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 69, 58, 0.3);
+}
+
+.btn-ghost {
+  background: rgba(118, 118, 128, 0.2);
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover {
+  background: rgba(118, 118, 128, 0.3);
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Locate button ── */
+.locate-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.locate-btn:active {
+  transform: scale(0.92);
+  background: var(--surface-elevated);
+}
+
+.locate-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Input fields ── */
+.input-apple {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  background: rgba(118, 118, 128, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.input-apple::placeholder {
+  color: var(--text-tertiary);
+}
+
+.input-apple:focus {
+  background: rgba(118, 118, 128, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+}
+
+/* ── Leaflet overrides ── */
+.leaflet-container {
+  background: #000 !important;
+  font-family: inherit;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.leaflet-control-zoom a:first-child {
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-radius: 0 0 8px 8px !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* ── Scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Route list item ── */
+.route-item {
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.route-item:hover {
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.route-item.active {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.4);
+}
+
+/* ── Pulsing location dot ── */
+@keyframes location-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.location-dot-pulse {
+  animation: location-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
