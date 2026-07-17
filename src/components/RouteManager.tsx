@@ -7,8 +7,6 @@ export default function RouteManager() {
     activeRouteId,
     isCreating,
     createStep,
-    draftStart,
-    draftFinish,
     loadRoutes,
     setActiveRoute,
     startCreate,

@@ -1,5 +1,3 @@
-import type { TileProvider } from '../types';
-
 export interface GeocoderResult {
   lat: string;
   lon: string;

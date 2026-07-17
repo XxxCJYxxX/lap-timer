@@ -5,7 +5,7 @@ import { useRouteStore } from '../stores/routeStore';
 import { useTimerStore } from '../stores/timerStore';
 import { useLocationStore } from '../stores/locationStore';
 import { toDisplayCoords, getTileProvider, setTileProvider } from '../utils/coord';
-import { osmLayer, amapLayer, BASE_LAYERS } from '../utils/tiles';
+import { osmLayer, BASE_LAYERS } from '../utils/tiles';
 import { haversine } from '../utils/distance';
 import type { TileProvider } from '../types';
 
@@ -67,7 +67,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
 
   const { isCreating, createStep, draftStart, draftFinish, activeRouteId, routes, setStart, setFinish } = useRouteStore();
 
-  const [provider, setProviderState] = useState<TileProvider>(getTileProvider());
+  const [/* provider */, setProviderState] = useState<TileProvider>(getTileProvider());
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 

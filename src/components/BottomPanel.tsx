@@ -46,7 +46,7 @@ export default function BottomPanel() {
 
   // Route store
   const {
-    routes, activeRouteId, isCreating, createStep, draftStart, draftFinish,
+    routes, activeRouteId, isCreating, createStep,
     loadRoutes, setActiveRoute, startCreate, saveRoute, cancelCreate, deleteRoute,
   } = useRouteStore();
 

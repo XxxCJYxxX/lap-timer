@@ -19,7 +19,6 @@ function formatTime(ms: number): string {
 
 export default function Timer() {
   const { status, elapsed, lastRecord, lastRecordColor, start, stop, tick, reset } = useTimerStore();
-  const activeRouteId = useRouteStore((s) => s.activeRouteId);
   const activeRoute = useRouteStore((s) => s.routes.find((r) => r.id === s.activeRouteId));
 
   const rafRef = useRef<number>(0);
