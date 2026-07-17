@@ -4,6 +4,8 @@ import { computeColor } from '../utils/color';
 import { useRouteStore } from './routeStore';
 import type { TimerStatus, LapRecord } from '../types';
 
+type AutoPhase = 'waiting_start' | 'leaving_start' | 'heading_to_finish';
+
 interface TimerState {
   status: TimerStatus;
   startTime: number | null;
@@ -11,7 +13,8 @@ interface TimerState {
   lastRecord: LapRecord | null;
   lastRecordColor: string | null;
   autoMode: boolean;
-  distanceToTarget: number | null; // meters, updated by GPS
+  autoPhase: AutoPhase;
+  distanceToTarget: number | null;
 
   start: () => void;
   tick: () => void;
@@ -19,6 +22,7 @@ interface TimerState {
   reset: () => void;
   toggleAutoMode: () => void;
   setDistance: (d: number | null) => void;
+  setAutoPhase: (p: AutoPhase) => void;
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
@@ -28,10 +32,15 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   lastRecord: null,
   lastRecordColor: null,
   autoMode: false,
+  autoPhase: 'waiting_start',
   distanceToTarget: null,
 
   start: () => {
-    set({ status: 'running', startTime: performance.now(), elapsed: 0, lastRecord: null, lastRecordColor: null });
+    set({
+      status: 'running', startTime: performance.now(), elapsed: 0,
+      lastRecord: null, lastRecordColor: null,
+      autoPhase: 'leaving_start',
+    });
   },
 
   tick: () => {
@@ -49,7 +58,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
     const activeId = useRouteStore.getState().activeRouteId;
     if (!activeId) {
-      set({ status: 'idle', startTime: null, elapsed: 0 });
+      set({ status: 'idle', startTime: null, elapsed: 0, autoPhase: 'waiting_start' });
       return null;
     }
 
@@ -61,19 +70,26 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({
       status: 'stopped', startTime: null, elapsed,
       lastRecord: { ...record, id }, lastRecordColor: color,
+      autoPhase: 'waiting_start',
     });
 
     return { ...record, id };
   },
 
   reset: () => {
-    set({ status: 'idle', startTime: null, elapsed: 0, lastRecord: null, lastRecordColor: null, distanceToTarget: null });
+    set({
+      status: 'idle', startTime: null, elapsed: 0,
+      lastRecord: null, lastRecordColor: null,
+      distanceToTarget: null, autoPhase: 'waiting_start',
+    });
   },
 
   toggleAutoMode: () => {
     const next = !get().autoMode;
-    set({ autoMode: next, distanceToTarget: next ? 0 : null });
+    set({ autoMode: next, distanceToTarget: next ? 0 : null, autoPhase: 'waiting_start' });
   },
 
   setDistance: (d) => set({ distanceToTarget: d }),
+
+  setAutoPhase: (p) => set({ autoPhase: p }),
 }));

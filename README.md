@@ -1,36 +1,42 @@
 # 🏎️ LapTimer
 
-**F1-style GPS lap timer for the web.** Set start/finish points on a map, create routes, and time your runs with millisecond precision. Auto-timing via GPS proximity in auto mode.
+> F1 风格 GPS 圈速计时器 · 在地图上设置发车点与终点，毫秒级计时，三色标记成绩，支持 GPS 自动启停
 
-![Tech](https://img.shields.io/badge/React-18-61DAFB?logo=react) ![TS](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite) ![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss)
+**An F1-style GPS lap timer for the web.** Set start/finish on a map, time your runs with millisecond precision, scored with F1-style color codes — purple for PB, green for faster, yellow for slower. GPS auto start/stop built in.
 
-## Features (v0.1 MVP)
+![Tech](https://img.shields.io/badge/React-18-61DAFB?logo=react) ![TS](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite) ![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss) ![license](https://img.shields.io/badge/license-MIT-green)
 
-- 🗺️ **Interactive map** — Leaflet + OpenStreetMap / Amap satellite tiles, layer switcher
-- 📍 **GPS location tracking** — Pulsing blue dot with accuracy circle, Apple Maps style
-- 🔍 **Place search** — Nominatim geocoder, type a name → fly to location
-- 🚩 **Route management** — Set start/finish by clicking map or using current GPS position
-- ⏱ **Millisecond timer** — `performance.now()` precision, `requestAnimationFrame` display
-- 🟣🟢🟡 **F1-style three-color scoring** — Purple (PB), Green (faster), Yellow (slower)
-- 🤖 **Auto start/stop** — GPS proximity triggers timer within 20m of start/finish
-- 💾 **Local-first storage** — IndexedDB via Dexie.js, zero server required
-- 🌓 **Dark UI** — Apple HIG design language, glass panels, system fonts
-- 🇨🇳 **China tile support** — Amap satellite tiles with GCJ-02 ↔ WGS-84 coordinate conversion
+---
 
-## Tech Stack
+## 功能 · Features
 
-| Layer | Choice |
-|-------|--------|
-| Framework | React 18 + TypeScript |
-| Build | Vite 8 |
-| Styling | Tailwind CSS 4 |
-| Map | Leaflet + react-leaflet 4 |
-| State | Zustand 5 |
-| Storage | Dexie.js (IndexedDB) |
-| Coordinates | gcoord (GCJ-02 ↔ WGS-84) |
-| Geocoding | Nominatim (OSM, free) |
+| 功能 Feature | 说明 Description |
+|-------------|-----------------|
+| 🗺️ 交互地图 | Leaflet + OSM / 高德卫星图，底图一键切换 |
+| 📍 GPS 定位 | 蓝色脉冲点 + 精度圈，Apple Maps 风格 |
+| 🔍 地名搜索 | Nominatim 地理编码，输入地名 → 地图飞过去 |
+| 🚩 路线管理 | 点地图或用当前位置设发车点/终点 |
+| ⏱ 毫秒计时 | `performance.now()` 精度，`requestAnimationFrame` 刷屏 |
+| 🟣🟢🟡 三色标记 | 紫（PB / 个人最佳）、绿（比上次快）、黄（比上次慢） |
+| 🤖 自动启停 | GPS 靠近发车点自动启表，靠近终点自动停表 |
+| 💾 纯本地存储 | IndexedDB + Dexie.js，无需服务器 |
+| 🌓 暗色界面 | Apple HIG 设计语言，玻璃面板，系统字体 |
+| 🇨🇳 国内适配 | 高德卫星瓦片 + GCJ-02 ↔ WGS-84 坐标转换 |
 
-## Quick Start
+## 技术栈 · Tech Stack
+
+| 层 Layer | 选型 Choice |
+|-----------|-------------|
+| 框架 | React 18 + TypeScript |
+| 构建 | Vite 8 |
+| 样式 | Tailwind CSS 4 |
+| 地图 | Leaflet + react-leaflet 4 |
+| 状态管理 | Zustand 5 |
+| 存储 | Dexie.js (IndexedDB) |
+| 坐标系 | gcoord (GCJ-02 ↔ WGS-84) |
+| 地理编码 | Nominatim (OSM, 免费) |
+
+## 快速开始 · Quick Start
 
 ```bash
 git clone https://github.com/XxxCJYxxX/lap-timer.git
@@ -39,23 +45,23 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+打开 / Open `http://localhost:5173`
 
-## Usage
+## 使用 · Usage
 
-1. **Create a route** — Routes tab → "新建路线" → click start point on map → click finish → name → save
-2. **Start timing** — Select a route → Timer tab → "启表" → drive the route → "停表"
-3. **Auto mode** — Enable location → toggle "自动启停" → GPS auto-starts within 20m of start, auto-stops at finish
+1. **创建路线** — 路线页签 → 「新建路线」→ 点地图发车点 → 点终点 → 命名 → 保存
+2. **手动计时** — 选中路线 → 计时页签 → 「启表」→ 跑完 → 「停表」
+3. **自动模式** — 先授权 GPS 定位 → 打开「自动启停」开关 → 走到发车点自动启表，到终点自动停表
 
-## Milestones
+## 里程碑 · Milestones
 
-| Version | Features |
-|---------|----------|
-| v0.1 ✅ | Map, routes, timer, three-color scoring, GPS auto-timing, search, local storage |
-| v0.2 | Trend charts, data export, light mode toggle |
-| v0.3 | GPS track replay, GPX import/export, route editing |
-| v1.0 | i18n, PWA, tests, cloud sync |
+| 版本 | 内容 |
+|------|------|
+| v0.1 ✅ | 地图、路线、计时、三色判定、GPS 自动启停、地名搜索、本地存储 |
+| v0.2 | 用时趋势图、数据导出、明暗切换 |
+| v0.3 | GPS 轨迹回放、GPX 导入导出、路线编辑 |
+| v1.0 | 国际化、PWA、测试、云端同步 |
 
-## License
+## 许可 · License
 
 MIT

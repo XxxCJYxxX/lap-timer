@@ -226,20 +226,33 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
         // Update shared location for "use current location" feature
         useLocationStore.getState().setPosition(latitude, longitude, accuracy);
 
-        // Auto start/stop based on GPS proximity
+        // Auto start/stop based on GPS proximity with state machine
         const ts = useTimerStore.getState();
         if (ts.autoMode) {
           const rs = useRouteStore.getState();
           const route = rs.routes.find((r) => r.id === rs.activeRouteId);
-          if (route) {
-            if (ts.status === 'idle') {
-              const d = haversine(latitude, longitude, route.startLat, route.startLng);
-              ts.setDistance(d);
-              if (d < 20) { ts.start(); }
-            } else if (ts.status === 'running') {
-              const d = haversine(latitude, longitude, route.finishLat, route.finishLng);
-              ts.setDistance(d);
-              if (d < 20) { ts.stop(); }
+          if (!route) return;
+
+          const dStart = haversine(latitude, longitude, route.startLat, route.startLng);
+          const dFinish = haversine(latitude, longitude, route.finishLat, route.finishLng);
+
+          if (ts.autoPhase === 'waiting_start') {
+            // Waiting near start → trigger auto-start
+            ts.setDistance(dStart);
+            if (dStart < 20) {
+              ts.start(); // start() also sets autoPhase → leaving_start
+            }
+          } else if (ts.autoPhase === 'leaving_start') {
+            // Must move >50m from start before stop can trigger
+            ts.setDistance(dStart);
+            if (dStart > 50) {
+              ts.setAutoPhase('heading_to_finish');
+            }
+          } else if (ts.autoPhase === 'heading_to_finish') {
+            // Heading toward finish — trigger stop when close
+            ts.setDistance(dFinish);
+            if (dFinish < 20 && ts.status === 'running') {
+              ts.stop();
             }
           }
         }

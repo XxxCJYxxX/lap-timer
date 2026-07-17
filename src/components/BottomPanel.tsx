@@ -51,7 +51,7 @@ export default function BottomPanel() {
   } = useRouteStore();
 
   // Timer store
-  const { status, elapsed, lastRecord, lastRecordColor, autoMode, distanceToTarget, start, stop, tick, reset, toggleAutoMode } = useTimerStore();
+  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, start, stop, tick, reset, toggleAutoMode } = useTimerStore();
   const { lat: gpsLat, lng: gpsLng } = useLocationStore();
 
   // Records store
@@ -297,17 +297,41 @@ export default function BottomPanel() {
                 </div>
               </button>
 
-              {/* Distance to target (auto mode) */}
-              {autoMode && distanceToTarget !== null && (
+              {/* Auto phase indicator */}
+              {autoMode && (
                 <div className="flex items-center justify-center gap-1.5 py-1">
-                  <span className="text-[11px] text-[var(--text-tertiary)]">
-                    {status === 'idle' ? '距发车点' : status === 'running' ? '距终点' : ''}
-                  </span>
-                  <span className="tabular-nums text-[15px] font-semibold" style={{ color: distanceToTarget < 20 ? 'var(--green)' : 'var(--text-secondary)' }}>
-                    {distanceToTarget < 1000
-                      ? `${Math.round(distanceToTarget)} m`
-                      : `${(distanceToTarget / 1000).toFixed(1)} km`}
-                  </span>
+                  {autoPhase === 'waiting_start' && (
+                    <span className="text-[11px] text-[var(--text-tertiary)]">
+                      📍 靠近发车点以自动启表
+                      {distanceToTarget !== null && (
+                        <span className="tabular-nums ml-1" style={{ color: distanceToTarget < 20 ? 'var(--green)' : 'var(--text-secondary)' }}>
+                          {Math.round(distanceToTarget)} m
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {autoPhase === 'leaving_start' && (
+                    <span className="text-[11px] text-[var(--text-tertiary)]">
+                      🚀 已发车，离开起点区域
+                      {distanceToTarget !== null && (
+                        <span className="tabular-nums ml-1" style={{ color: distanceToTarget > 50 ? 'var(--green)' : 'var(--yellow)' }}>
+                          {Math.round(distanceToTarget)} m
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {autoPhase === 'heading_to_finish' && (
+                    <span className="text-[11px] text-[var(--text-tertiary)]">
+                      🏁 距终点
+                      {distanceToTarget !== null && (
+                        <span className="tabular-nums ml-1" style={{ color: distanceToTarget < 20 ? 'var(--green)' : 'var(--text-secondary)' }}>
+                          {distanceToTarget < 1000
+                            ? `${Math.round(distanceToTarget)} m`
+                            : `${(distanceToTarget / 1000).toFixed(1)} km`}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </div>
               )}
 
