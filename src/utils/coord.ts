@@ -1,7 +1,7 @@
 import gcoord from 'gcoord';
 import type { TileProvider } from '../types';
 
-let currentProvider: TileProvider = 'osm';
+let currentProvider: TileProvider = 'amap';
 
 export function getTileProvider(): TileProvider {
   return currentProvider;

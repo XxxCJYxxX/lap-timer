@@ -5,7 +5,7 @@ import { useRouteStore } from '../stores/routeStore';
 import { useTimerStore } from '../stores/timerStore';
 import { useLocationStore } from '../stores/locationStore';
 import { toDisplayCoords, getTileProvider, setTileProvider } from '../utils/coord';
-import { osmLayer, BASE_LAYERS } from '../utils/tiles';
+import { amapRoadLayer, BASE_LAYERS } from '../utils/tiles';
 import { haversine } from '../utils/distance';
 import type { TileProvider } from '../types';
 
@@ -80,7 +80,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
       zoom: 13,
       zoomControl: false,
       attributionControl: false,
-      layers: [osmLayer],
+      layers: [amapRoadLayer],
     });
 
     // Glass-styled zoom control
@@ -91,7 +91,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
     layerControl.addTo(map);
 
     map.on('baselayerchange', (e: any) => {
-      const newProvider: TileProvider = e.name === '高德卫星图' ? 'amap' : 'osm';
+      const newProvider: TileProvider = e.name.startsWith('高德') ? 'amap' : 'osm';
       setTileProvider(newProvider);
       setProviderState(newProvider);
       refreshMarkers();
