@@ -65,6 +65,7 @@ export default function BottomPanel() {
   // Route creation state
   const [routeName, setRouteName] = useState('');
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [seedInput, setSeedInput] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +101,17 @@ export default function BottomPanel() {
       loadRoutes(); setActiveRoute(id); setTab('timer');
     } else alert('文件格式不正确');
     e.target.value = '';
+  };
+
+  const importSeed = async (code: string) => {
+    if (!code.trim()) return;
+    try {
+      const wps = decodePolyline(code.trim());
+      if (wps.length < 2) { alert('无效的种子码'); return; }
+      const id = await db.routes.add({ name: `导入路线 ${new Date().toLocaleDateString()}`, waypoints: wps, createdAt: Date.now() });
+      setSeedInput('');
+      loadRoutes(); setActiveRoute(id); setTab('timer');
+    } catch { alert('种子码格式错误'); }
   };
 
   const handleSaveRoute = () => {
@@ -151,25 +163,22 @@ export default function BottomPanel() {
               <div className="flex gap-1.5 items-center">
                 <input
                   type="text"
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
                   placeholder="粘贴种子码导入…"
                   className="input-apple h-8 text-[12px]"
-                  onKeyDown={async (e) => {
-                    if (e.key !== 'Enter') return;
-                    const code = (e.target as HTMLInputElement).value.trim();
-                    if (!code) return;
-                    try {
-                      const wps = decodePolyline(code);
-                      if (wps.length < 2) { alert('无效的种子码'); return; }
-                      (e.target as HTMLInputElement).value = '';
-                      const id = await db.routes.add({ name: `导入路线 ${new Date().toLocaleDateString()}`, waypoints: wps, createdAt: Date.now() });
-                      loadRoutes(); setActiveRoute(id); setTab('timer');
-                    } catch { alert('种子码格式错误'); }
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') importSeed(seedInput); }}
                 />
                 <input ref={fileInputRef} type="file" accept=".json,.laproute.json" onChange={handleImport} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-ghost shrink-0" title="导入JSON文件">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
+                {seedInput.trim() ? (
+                  <button onClick={() => importSeed(seedInput)} className="btn btn-sm btn-primary shrink-0" title="导入种子">
+                    ⬇ 导入
+                  </button>
+                ) : (
+                  <button onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-ghost shrink-0" title="导入JSON文件">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                )}
               </div>
             </div>
           )}
