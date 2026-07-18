@@ -47,7 +47,9 @@ export default function BottomPanel() {
   // Route store
   const {
     routes, activeRouteId, isCreating, createStep,
+    draftWaypoints,
     loadRoutes, setActiveRoute, startCreate, saveRoute, cancelCreate, deleteRoute,
+    undoWaypoint, setFinish,
   } = useRouteStore();
 
   // Timer store
@@ -78,7 +80,7 @@ export default function BottomPanel() {
 
   // Focus name input
   useEffect(() => {
-    if (createStep === 'name' && nameInputRef.current) {
+    if (createStep === 'naming' && nameInputRef.current) {
       nameInputRef.current.focus();
     }
   }, [createStep]);
@@ -133,54 +135,44 @@ export default function BottomPanel() {
 
           {/* Creation flow */}
           {isCreating && (
-            <div className="p-3 rounded-2xl" style={{ background: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)' }}>
-              {createStep === 'start' && (
-                <div className="space-y-2">
+            <div className="p-3 rounded-2xl space-y-2" style={{ background: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)' }}>
+              {createStep === 'adding_points' && (
+                <>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
-                    <span className="text-[13px] text-[var(--accent)] font-medium">点击地图设置发车点</span>
+                    <span className="text-[13px] text-[var(--accent)] font-medium">
+                      点击地图添加航点（{draftWaypoints.length} 个）
+                    </span>
                   </div>
+                  {/* Use current location */}
                   {gpsLat !== null && gpsLng !== null && (
                     <button
                       onClick={() => {
-                        const [slng, slat] = toStorageCoords(gpsLng, gpsLat);
-                        useRouteStore.getState().setStart(slng, slat);
+                        const [wlng, wlat] = toStorageCoords(gpsLng, gpsLat);
+                        useRouteStore.getState().addWaypoint(wlng, wlat);
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-medium"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[12px] font-medium"
                       style={{ background: 'rgba(10,132,255,0.12)', color: 'var(--accent)' }}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="7" cy="7" r="0.8" fill="currentColor"/><path d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                      使用当前位置
+                      使用当前位置添加航点
                     </button>
                   )}
-                </div>
-              )}
-              {createStep === 'finish' && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
-                    <span className="text-[13px] text-[var(--accent)] font-medium">点击地图设置终点</span>
+                  <div className="flex gap-2">
+                    <button onClick={undoWaypoint} disabled={draftWaypoints.length === 0} className="btn btn-sm btn-ghost flex-1 disabled:opacity-30">
+                      ↩ 撤销
+                    </button>
+                    <button onClick={setFinish} disabled={draftWaypoints.length < 2} className="btn btn-sm btn-primary flex-1 disabled:opacity-40">
+                      🏁 设为终点
+                    </button>
                   </div>
-                  {gpsLat !== null && gpsLng !== null && (
-                    <button
-                      onClick={() => {
-                        const [flng, flat] = toStorageCoords(gpsLng, gpsLat);
-                        useRouteStore.getState().setFinish(flng, flat);
-                      }}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-medium"
-                      style={{ background: 'rgba(255,69,58,0.12)', color: 'var(--red)' }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="7" cy="7" r="0.8" fill="currentColor"/><path d="M7 1v2.5M7 10.5V13M1 7h2.5M10.5 7H13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                      使用当前位置
-                    </button>
-                  )}
-                </div>
+                </>
               )}
-              {createStep === 'name' && (
+              {createStep === 'naming' && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[var(--green)]" />
-                    <span className="text-[13px] font-medium text-[var(--text-primary)]">发车点和终点已设置</span>
+                    <span className="text-[13px] font-medium text-[var(--text-primary)]">{draftWaypoints.length} 个航点已设置</span>
                   </div>
                   <input
                     ref={nameInputRef}
@@ -194,7 +186,9 @@ export default function BottomPanel() {
                   />
                   <div className="flex gap-2">
                     <button onClick={cancelCreate} className="btn btn-sm btn-ghost flex-1">取消</button>
-                    <button onClick={handleSaveRoute} disabled={!routeName.trim()} className="btn btn-sm btn-primary flex-1 disabled:opacity-40 disabled:pointer-events-none">保存</button>
+                    <button onClick={handleSaveRoute} disabled={!routeName.trim()} className="btn btn-sm btn-primary flex-1 disabled:opacity-40 disabled:pointer-events-none">
+                      保存路线
+                    </button>
                   </div>
                 </div>
               )}

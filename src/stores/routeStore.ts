@@ -3,19 +3,21 @@ import { db } from '../db/db';
 import { toStorageCoords } from '../utils/coord';
 import type { Route } from '../types';
 
+type CreateStep = 'adding_points' | 'naming';
+
 interface RouteState {
   routes: Route[];
   activeRouteId: number | null;
   isCreating: boolean;
-  createStep: 'start' | 'finish' | 'name';
-  draftStart: [number, number] | null;
-  draftFinish: [number, number] | null;
+  createStep: CreateStep;
+  draftWaypoints: { lat: number; lng: number }[];
 
   loadRoutes: () => Promise<void>;
   setActiveRoute: (id: number) => void;
   startCreate: () => void;
-  setStart: (lng: number, lat: number) => void;
-  setFinish: (lng: number, lat: number) => void;
+  addWaypoint: (lng: number, lat: number) => void;
+  undoWaypoint: () => void;
+  setFinish: () => void;
   saveRoute: (name: string) => Promise<Route>;
   cancelCreate: () => void;
   deleteRoute: (id: number) => Promise<void>;
@@ -26,9 +28,8 @@ export const useRouteStore = create<RouteState>((set, get) => ({
   routes: [],
   activeRouteId: null,
   isCreating: false,
-  createStep: 'start',
-  draftStart: null,
-  draftFinish: null,
+  createStep: 'adding_points',
+  draftWaypoints: [],
 
   loadRoutes: async () => {
     const routes = await db.routes.orderBy('createdAt').reverse().toArray();
@@ -36,32 +37,34 @@ export const useRouteStore = create<RouteState>((set, get) => ({
   },
 
   setActiveRoute: (id) => {
-    set({ activeRouteId: id, isCreating: false, createStep: 'start', draftStart: null, draftFinish: null });
+    set({ activeRouteId: id, isCreating: false, createStep: 'adding_points', draftWaypoints: [] });
   },
 
   startCreate: () => {
-    set({ isCreating: true, createStep: 'start', draftStart: null, draftFinish: null, activeRouteId: null });
+    set({ isCreating: true, createStep: 'adding_points', draftWaypoints: [], activeRouteId: null });
   },
 
-  setStart: (lng, lat) => {
-    const [slng, slat] = toStorageCoords(lng, lat);
-    set({ draftStart: [slat, slng], createStep: 'finish' });
+  addWaypoint: (lng, lat) => {
+    const [wlng, wlat] = toStorageCoords(lng, lat);
+    set((s) => ({
+      draftWaypoints: [...s.draftWaypoints, { lat: wlat, lng: wlng }],
+    }));
   },
 
-  setFinish: (lng, lat) => {
-    const [flng, flat] = toStorageCoords(lng, lat);
-    set({ draftFinish: [flat, flng], createStep: 'name' });
+  undoWaypoint: () => {
+    set((s) => ({ draftWaypoints: s.draftWaypoints.slice(0, -1) }));
+  },
+
+  setFinish: () => {
+    set({ createStep: 'naming' });
   },
 
   saveRoute: async (name) => {
-    const { draftStart, draftFinish } = get();
-    if (!draftStart || !draftFinish) throw new Error('Missing start or finish');
+    const { draftWaypoints } = get();
+    if (draftWaypoints.length < 2) throw new Error('需要至少2个点');
     const route: Route = {
       name,
-      startLat: draftStart[0],
-      startLng: draftStart[1],
-      finishLat: draftFinish[0],
-      finishLng: draftFinish[1],
+      waypoints: draftWaypoints,
       createdAt: Date.now(),
     };
     const id = await db.routes.add(route);
@@ -69,16 +72,15 @@ export const useRouteStore = create<RouteState>((set, get) => ({
     set((s) => ({
       routes: [saved, ...s.routes],
       isCreating: false,
-      createStep: 'start',
-      draftStart: null,
-      draftFinish: null,
+      createStep: 'adding_points',
+      draftWaypoints: [],
       activeRouteId: id,
     }));
     return saved;
   },
 
   cancelCreate: () => {
-    set({ isCreating: false, createStep: 'start', draftStart: null, draftFinish: null });
+    set({ isCreating: false, createStep: 'adding_points', draftWaypoints: [] });
   },
 
   deleteRoute: async (id) => {

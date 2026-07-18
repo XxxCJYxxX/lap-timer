@@ -1,10 +1,12 @@
+export interface Waypoint {
+  lat: number;
+  lng: number;
+}
+
 export interface Route {
   id?: number;
   name: string;
-  startLat: number;
-  startLng: number;
-  finishLat: number;
-  finishLng: number;
+  waypoints: Waypoint[];
   createdAt: number;
 }
 

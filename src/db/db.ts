@@ -7,7 +7,7 @@ class LapTimerDB extends Dexie {
 
   constructor() {
     super('LapTimerDB');
-    this.version(1).stores({
+    this.version(2).stores({
       routes: '++id, name, createdAt',
       records: '++id, routeId, timestamp',
     });

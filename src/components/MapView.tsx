@@ -67,7 +67,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const prevPosRef = useRef<{ lat: number; lng: number; ts: number } | null>(null);
   const lastGpsUpdateRef = useRef<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
 
-  const { isCreating, createStep, draftStart, draftFinish, activeRouteId, routes, setStart, setFinish } = useRouteStore();
+  const { isCreating, createStep, draftWaypoints, activeRouteId, routes, addWaypoint } = useRouteStore();
 
   const [/* provider */, setProviderState] = useState<TileProvider>(getTileProvider());
   const [isLocating, setIsLocating] = useState(false);
@@ -126,37 +126,59 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
 
     const activeRoute = routes.find((r) => r.id === activeRouteId);
 
-    if (isCreating) {
-      if (draftStart) {
-        const [lng, lat] = toDisplayCoords(draftStart[1], draftStart[0]);
-        L.marker([lat, lng], { icon: START_ICON }).addTo(group);
+    if (isCreating && draftWaypoints.length > 0) {
+      // Render all draft waypoints
+      const points: L.LatLngExpression[] = [];
+      draftWaypoints.forEach((wp, i) => {
+        const [lng, lat] = toDisplayCoords(wp.lng, wp.lat);
+        points.push([lat, lng]);
+        const isFirst = i === 0;
+        const isLast = i === draftWaypoints.length - 1 && draftWaypoints.length > 1;
+        const num = i + 1;
+        const icon = isFirst
+          ? L.divIcon({
+              className: '',
+              html: `<div style="width:32px;height:32px;border-radius:50%;background:var(--green);border:2px solid rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(48,209,88,0.4);color:#000;font-size:13px;font-weight:700">S</div>`,
+              iconSize: [32, 32], iconAnchor: [16, 16],
+            })
+          : isLast
+          ? L.divIcon({
+              className: '',
+              html: `<div style="width:32px;height:32px;border-radius:50%;background:var(--red);border:2px solid rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(255,69,58,0.4);color:#fff;font-size:13px;font-weight:700">F</div>`,
+              iconSize: [32, 32], iconAnchor: [16, 16],
+            })
+          : L.divIcon({
+              className: '',
+              html: `<div style="width:28px;height:28px;border-radius:50%;background:rgba(118,118,128,0.7);border:2px solid rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600">${num}</div>`,
+              iconSize: [28, 28], iconAnchor: [14, 14],
+            });
+        L.marker([lat, lng], { icon, zIndexOffset: 900 - i }).addTo(group);
+      });
+      if (points.length >= 2) {
+        L.polyline(points, { color: '#BF5AF2', weight: 2.5, dashArray: '8 4', opacity: 0.8 }).addTo(group);
       }
-      if (draftFinish) {
-        const [lng, lat] = toDisplayCoords(draftFinish[1], draftFinish[0]);
-        L.marker([lat, lng], { icon: FINISH_ICON }).addTo(group);
+    } else if (activeRoute && activeRoute.waypoints.length > 0) {
+      const allWps = activeRoute.waypoints;
+      const points: L.LatLngExpression[] = [];
+      allWps.forEach((wp, i) => {
+        const [lng, lat] = toDisplayCoords(wp.lng, wp.lat);
+        points.push([lat, lng]);
+        const isFirst = i === 0;
+        const isLast = i === allWps.length - 1;
+        const icon = isFirst ? START_ICON : isLast ? FINISH_ICON : L.divIcon({
+          className: '',
+          html: `<div style="width:24px;height:24px;border-radius:50%;background:rgba(118,118,128,0.6);border:1.5px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">${i+1}</div>`,
+          iconSize: [24, 24], iconAnchor: [12, 12],
+        });
+        L.marker([lat, lng], { icon }).addTo(group);
+      });
+      if (points.length >= 2) {
+        L.polyline(points, { color: '#BF5AF2', weight: 2.5, opacity: 0.7 }).addTo(group);
       }
-      if (draftStart && draftFinish) {
-        const [slng, slat] = toDisplayCoords(draftStart[1], draftStart[0]);
-        const [flng, flat] = toDisplayCoords(draftFinish[1], draftFinish[0]);
-        L.polyline(
-          [[slat, slng], [flat, flng]],
-          { color: '#BF5AF2', weight: 2.5, dashArray: '8 4', opacity: 0.8 }
-        ).addTo(group);
-      }
-    } else if (activeRoute) {
-      const [slng, slat] = toDisplayCoords(activeRoute.startLng, activeRoute.startLat);
-      const [flng, flat] = toDisplayCoords(activeRoute.finishLng, activeRoute.finishLat);
-      L.marker([slat, slng], { icon: START_ICON }).addTo(group);
-      L.marker([flat, flng], { icon: FINISH_ICON }).addTo(group);
-      L.polyline(
-        [[slat, slng], [flat, flng]],
-        { color: '#BF5AF2', weight: 2.5, opacity: 0.7 }
-      ).addTo(group);
-
-      const bounds = L.latLngBounds([[slat, slng], [flat, flng]]);
+      const bounds = L.latLngBounds(points);
       map.fitBounds(bounds.pad(0.3));
     }
-  }, [isCreating, createStep, draftStart, draftFinish, activeRouteId, routes]);
+  }, [isCreating, createStep, draftWaypoints, activeRouteId, routes]);
 
   useEffect(() => { refreshMarkers(); }, [refreshMarkers]);
 
@@ -166,17 +188,13 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
     if (!map) return;
 
     const handler = (e: L.LeafletMouseEvent) => {
-      if (!isCreating) return;
-      if (createStep === 'start') {
-        setStart(e.latlng.lng, e.latlng.lat);
-      } else if (createStep === 'finish') {
-        setFinish(e.latlng.lng, e.latlng.lat);
-      }
+      if (!isCreating || createStep !== 'adding_points') return;
+      addWaypoint(e.latlng.lng, e.latlng.lat);
     };
 
     map.on('click', handler);
     return () => { map.off('click', handler); };
-  }, [isCreating, createStep, setStart, setFinish]);
+  }, [isCreating, createStep, addWaypoint]);
 
   // ── Location tracking ──
 
@@ -260,10 +278,12 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
         if (ts.autoMode) {
           const rs = useRouteStore.getState();
           const route = rs.routes.find((r) => r.id === rs.activeRouteId);
-          if (!route) return;
+          if (!route || route.waypoints.length < 2) return;
 
-          const dStart = haversine(latitude, longitude, route.startLat, route.startLng);
-          const dFinish = haversine(latitude, longitude, route.finishLat, route.finishLng);
+          const start = route.waypoints[0];
+          const finish = route.waypoints[route.waypoints.length - 1];
+          const dStart = haversine(latitude, longitude, start.lat, start.lng);
+          const dFinish = haversine(latitude, longitude, finish.lat, finish.lng);
 
           if (ts.autoPhase === 'waiting_start') {
             // Waiting near start → trigger auto-start
