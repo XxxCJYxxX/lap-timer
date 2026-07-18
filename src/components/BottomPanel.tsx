@@ -5,6 +5,8 @@ import { useRecordsStore } from '../stores/recordStore';
 import { useLocationStore } from '../stores/locationStore';
 import { toStorageCoords } from '../utils/coord';
 import { COLOR_MAP } from '../utils/color';
+import { downloadRoute } from '../utils/routeIO';
+import { db } from '../db/db';
 import type { RecordColor } from '../types';
 
 type Tab = 'routes' | 'timer' | 'records';
@@ -57,11 +59,12 @@ export default function BottomPanel() {
   const { lat: gpsLat, lng: gpsLng } = useLocationStore();
 
   // Records store
-  const { records, loadRecords } = useRecordsStore();
+  const { records, loadRecords, deleteRecord } = useRecordsStore();
 
   // Route creation state
   const [routeName, setRouteName] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadRoutes(); }, [loadRoutes]);
 
@@ -84,6 +87,18 @@ export default function BottomPanel() {
       nameInputRef.current.focus();
     }
   }, [createStep]);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await file.text();
+    const { parseRouteFile } = await import('../utils/routeIO');
+    const parsed = parseRouteFile(text);
+    if (parsed) {
+      const id = await db.routes.add({ name: parsed.name, waypoints: parsed.waypoints, createdAt: Date.now() });
+      loadRoutes(); setActiveRoute(id); setTab('timer');
+    } else alert('文件格式不正确');
+    e.target.value = '';
+  };
 
   const handleSaveRoute = () => {
     const name = routeName.trim();
@@ -121,17 +136,21 @@ export default function BottomPanel() {
       {/* ── Routes Tab ── */}
       {tab === 'routes' && (
         <div className="space-y-2 custom-scrollbar max-h-[340px] overflow-y-auto">
-          {/* Create button */}
-          <div className="flex justify-between items-center">
-            <span className="text-[13px] font-medium text-[var(--text-secondary)]">
-              {routes.length} 条路线
-            </span>
-            {!isCreating && (
-              <button onClick={startCreate} className="btn btn-sm btn-primary">
-                + 新建路线
-              </button>
-            )}
-          </div>
+          {/* Route actions */}
+          {!isCreating && (
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-[13px] font-medium text-[var(--text-secondary)]">
+                {routes.length} 条路线
+              </span>
+              <div className="flex gap-1.5">
+                <input ref={fileInputRef} type="file" accept=".json,.laproute.json" onChange={handleImport} className="hidden" />
+                <button onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-ghost" title="导入路线">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <button onClick={startCreate} className="btn btn-sm btn-primary">+ 新建</button>
+              </div>
+            </div>
+          )}
 
           {/* Creation flow */}
           {isCreating && (
@@ -211,18 +230,28 @@ export default function BottomPanel() {
                     {new Date(route.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                   </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`删除"${route.name}"？`)) deleteRoute(route.id!);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,69,58,0.15)] transition-all"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                </button>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); downloadRoute(route); }}
+                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    title="导出路线"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`删除"${route.name}"？`)) deleteRoute(route.id!);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,69,58,0.15)] transition-all"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -432,17 +461,26 @@ export default function BottomPanel() {
                   return (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl"
+                      className="group flex items-center justify-between px-3 py-2 rounded-xl"
                       style={{ background: color ? bgMap[color] : 'rgba(118,118,128,0.08)' }}
                     >
                       <span className="tabular-nums text-[15px] font-medium" style={{ color: color ? textMap[color] : 'var(--text-primary)' }}>
                         {formatTimeShort(record.timeMs)}
                       </span>
-                      <span className="text-[12px] text-[var(--text-tertiary)]">
-                        {new Date(record.timestamp).toLocaleString('zh-CN', {
-                          month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-                        })}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[var(--text-tertiary)]">
+                          {new Date(record.timestamp).toLocaleString('zh-CN', {
+                            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+                          })}
+                        </span>
+                        <button
+                          onClick={() => { if (confirm('删除这条记录？')) deleteRecord(record.id!); }}
+                          className="w-6 h-6 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,69,58,0.15)] transition-all shrink-0"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
