@@ -64,6 +64,7 @@ export default function BottomPanel() {
 
   // Route creation state
   const [routeName, setRouteName] = useState('');
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -251,42 +252,67 @@ export default function BottomPanel() {
                     {new Date(route.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                   </div>
                 </div>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); downloadRoute(route); }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-full active:bg-[rgba(255,255,255,0.12)]"
                     style={{ color: 'var(--text-tertiary)' }}
-                    title="导出"
+                    title="导出JSON"
                   >
-                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); reverseRoute(route.id!); }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-full active:bg-[rgba(255,255,255,0.12)]"
                     style={{ color: 'var(--text-tertiary)' }}
                     title="反跑"
                   >
-                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9 2l4 4-4 4M13 6H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  <button
-                    onClick={async (e) => { e.stopPropagation(); await navigator.clipboard.writeText(encodePolyline(route.waypoints)); }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
-                    style={{ color: 'var(--text-tertiary)' }}
-                    title="复制种子码"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 10V3a2 2 0 012-2h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2l4 4-4 4M13 6H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       if (confirm(`删除"${route.name}"？`)) deleteRoute(route.id!);
                     }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,69,58,0.15)] transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-full active:bg-[rgba(255,69,58,0.18)]"
                     style={{ color: 'var(--text-tertiary)' }}
+                    title="删除"
                   >
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
+                  </button>
+                  {/* 复制种子码 — 最右侧常驻 */}
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const code = encodePolyline(route.waypoints);
+                      try {
+                        await navigator.clipboard.writeText(code);
+                      } catch {
+                        const ta = document.createElement('textarea');
+                        ta.value = code;
+                        document.body.appendChild(ta); ta.select();
+                        document.execCommand('copy'); document.body.removeChild(ta);
+                      }
+                      setCopiedId(route.id!);
+                      setTimeout(() => setCopiedId(null), 1500);
+                    }}
+                    className="h-8 px-2.5 flex items-center justify-center gap-1 rounded-full text-[11px] font-medium shrink-0"
+                    style={{
+                      background: copiedId === route.id ? 'rgba(48,209,88,0.18)' : 'rgba(10,132,255,0.14)',
+                      color: copiedId === route.id ? 'var(--green)' : 'var(--accent)',
+                    }}
+                    title="复制种子码"
+                  >
+                    {copiedId === route.id ? (
+                      <>✓ 已复制</>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 10V3a2 2 0 012-2h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                        种子
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
