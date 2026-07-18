@@ -118,13 +118,16 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   setFollowMode: (v) => set({ followMode: v }),
 
   beginStartSequence: async () => {
-    const phases: LightPhase[] = ['light1', 'light2', 'light3', 'light4', 'light5', 'go'];
+    const phases: LightPhase[] = ['light1', 'light2', 'light3', 'light4', 'light5'];
     get().setLightPhase('light1');
     for (let i = 1; i < phases.length; i++) {
       await sleep(800);
       get().setLightPhase(phases[i]);
     }
-    await sleep(200);
+    // After 5 lights lit, random delay 1.5~4s, then all go out
+    await sleep(1500 + Math.random() * 2500);
+    get().setLightPhase('go'); // go = lights out
+    await sleep(100);
     get().start();
   },
 }));
