@@ -21,20 +21,21 @@ function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-black">
-      {/* Map - full screen, behind everything */}
+    <div className="h-full w-full overflow-hidden bg-black">
+      {/* Map - full screen */}
       <main className="absolute inset-0">
         <MapView flyTo={flyTo} onFlyComplete={handleFlyComplete} />
       </main>
 
-      {/* Top bar - glass, minimal, with search */}
+      {/* Top bar with safe area */}
       <header
-        className="absolute top-0 left-0 right-0 h-11 flex items-center gap-3 px-4 z-[900] select-none"
+        className="absolute top-0 left-0 right-0 z-[900] flex items-center gap-3 px-4 select-none header-safe"
         style={{
           background: 'rgba(28, 28, 30, 0.72)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
+          height: '44px',
         }}
       >
         {/* App logo */}
@@ -45,7 +46,7 @@ function App() {
           >
             <span className="text-[11px] font-black text-white">LT</span>
           </div>
-          <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] hidden sm:block">
+          <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] hidden sm:inline">
             LapTimer
           </h1>
         </div>
@@ -53,25 +54,25 @@ function App() {
         {/* Search bar */}
         <SearchBar onSelect={handleSearchSelect} />
 
-        {/* Version badge */}
-        <span className="text-[11px] font-medium text-[var(--text-tertiary)] shrink-0">v0.1</span>
+        {/* Version */}
+        <span className="text-[11px] font-medium text-[var(--text-tertiary)] shrink-0 hidden sm:inline">v0.1</span>
       </header>
 
-      {/* Bottom glass panel */}
+      {/* Bottom glass panel — responsive */}
       <div
-        className="absolute bottom-4 left-4 right-4 z-[900] rounded-3xl overflow-hidden"
+        className="absolute z-[900] rounded-3xl overflow-hidden bottom-panel"
         style={{
           background: 'rgba(28, 28, 30, 0.82)',
           backdropFilter: 'blur(30px) saturate(180%)',
           WebkitBackdropFilter: 'blur(30px) saturate(180%)',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.05) inset',
-          maxWidth: '420px',
-          marginLeft: 'auto',
-          marginRight: 'auto',
+          bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          left: 'max(12px, env(safe-area-inset-left, 0px) + 4px)',
+          right: 'max(12px, env(safe-area-inset-right, 0px) + 4px)',
         }}
       >
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <BottomPanel />
         </div>
       </div>

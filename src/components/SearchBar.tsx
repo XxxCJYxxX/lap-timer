@@ -86,7 +86,7 @@ export default function SearchBar({ onSelect }: Props) {
   };
 
   return (
-    <div ref={containerRef} className="relative flex-1 max-w-[320px]">
+    <div ref={containerRef} className="relative flex-1 max-w-[280px] sm:max-w-[320px]">
       {/* Search field */}
       <div
         className="flex items-center h-8 rounded-full overflow-hidden transition-all"

@@ -365,7 +365,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   return (
     <div ref={containerRef} className="w-full h-full">
       {/* Locate button - floating on map */}
-      <div className="absolute bottom-28 right-3 z-[1000] flex flex-col gap-2">
+      <div className="absolute z-[1000] flex flex-col gap-2" style={{ bottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', right: 'max(12px, env(safe-area-inset-right, 0px) + 4px)' }}>
         <button
           onClick={toggleLocation}
           className={`locate-btn ${isLocating ? 'active' : ''}`}

@@ -262,7 +262,7 @@ export default function BottomPanel() {
                 <div
                   className="tabular-nums font-semibold tracking-tighter"
                   style={{
-                    fontSize: status === 'running' ? '56px' : '48px',
+                    fontSize: 'clamp(40px, 10vw, 56px)',
                     lineHeight: 1.1,
                     color: status === 'running' ? 'var(--text-primary)' : 'var(--text-secondary)',
                     fontVariantNumeric: 'tabular-nums',
