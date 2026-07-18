@@ -7,6 +7,9 @@ import { useLocationStore } from '../stores/locationStore';
 import { toDisplayCoords, getTileProvider, setTileProvider } from '../utils/coord';
 import { amapRoadLayer, BASE_LAYERS } from '../utils/tiles';
 import { haversine } from '../utils/distance';
+import { encodePolyline } from '../utils/seedcode';
+import { downloadRoute } from '../utils/routeIO';
+import type { Route } from '../types';
 import type { TileProvider } from '../types';
 
 // Fix Leaflet default icon paths
@@ -53,6 +56,57 @@ const LOCATION_ICON = L.divIcon({
 interface Props {
   flyTo?: { lat: number; lng: number; label: string } | null;
   onFlyComplete?: () => void;
+}
+
+/** Build a native-DOM context menu for a route (used inside Leaflet popup) */
+function buildRouteMenu(route: Route, map: L.Map): HTMLElement {
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex;flex-direction:column;gap:2px;min-width:150px;padding:4px;';
+
+  const title = document.createElement('div');
+  title.textContent = route.name;
+  title.style.cssText = 'font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);padding:4px 10px 8px;border-bottom:0.5px solid rgba(255,255,255,0.08);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;';
+  container.appendChild(title);
+
+  const mkBtn = (label: string, onClick: (btn: HTMLButtonElement) => void) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'all:unset;cursor:pointer;padding:9px 10px;border-radius:8px;font-size:13px;color:rgba(255,255,255,0.92);display:block;width:100%;box-sizing:border-box;-webkit-tap-highlight-color:transparent;';
+    b.addEventListener('touchstart', () => { b.style.background = 'rgba(255,255,255,0.1)'; }, { passive: true });
+    b.addEventListener('touchend', () => { setTimeout(() => { b.style.background = 'transparent'; }, 150); }, { passive: true });
+    b.onmouseenter = () => { b.style.background = 'rgba(255,255,255,0.08)'; };
+    b.onmouseleave = () => { b.style.background = 'transparent'; };
+    b.onclick = () => onClick(b);
+    container.appendChild(b);
+    return b;
+  };
+
+  mkBtn('📋 复制种子', async (btn) => {
+    const code = encodePolyline(route.waypoints);
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    btn.textContent = '✓ 已复制';
+    btn.style.color = '#30D158';
+    setTimeout(() => { btn.textContent = '📋 复制种子'; btn.style.color = 'rgba(255,255,255,0.92)'; }, 1500);
+  });
+
+  mkBtn('↩ 反跑', () => {
+    useRouteStore.getState().reverseRoute(route.id!);
+    map.closePopup();
+  });
+
+  mkBtn('📥 导出 JSON', () => {
+    downloadRoute(route);
+    map.closePopup();
+  });
+
+  return container;
 }
 
 export default function MapView({ flyTo, onFlyComplete }: Props) {
@@ -172,10 +226,14 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
           html: `<div style="width:24px;height:24px;border-radius:50%;background:rgba(118,118,128,0.6);border:1.5px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">${i+1}</div>`,
           iconSize: [24, 24], iconAnchor: [12, 12],
         });
-        L.marker([lat, lng], { icon }).addTo(group);
+        L.marker([lat, lng], { icon })
+          .addTo(group)
+          .bindPopup(() => buildRouteMenu(activeRoute, map), { className: 'search-popup', closeButton: false, offset: [0, -8] });
       });
       if (points.length >= 2) {
-        L.polyline(points, { color: '#BF5AF2', weight: 2.5, opacity: 0.7 }).addTo(group);
+        L.polyline(points, { color: '#BF5AF2', weight: 2.5, opacity: 0.7 })
+          .addTo(group)
+          .bindPopup(() => buildRouteMenu(activeRoute, map), { className: 'search-popup', closeButton: false });
       }
       const bounds = L.latLngBounds(points);
       map.fitBounds(bounds.pad(0.3));
