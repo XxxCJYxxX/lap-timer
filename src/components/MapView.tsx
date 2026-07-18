@@ -64,6 +64,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const locationWatchId = useRef<number | null>(null);
   const isFollowingRef = useRef(false);
   const searchMarkerRef = useRef<L.Marker | null>(null);
+  const prevPosRef = useRef<{ lat: number; lng: number; ts: number } | null>(null);
 
   const { isCreating, createStep, draftStart, draftFinish, activeRouteId, routes, setStart, setFinish } = useRouteStore();
 
@@ -225,6 +226,18 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
 
         // Update shared location for "use current location" feature
         useLocationStore.getState().setPosition(latitude, longitude, accuracy);
+
+        // Calculate speed from consecutive GPS positions
+        const now = pos.timestamp;
+        if (prevPosRef.current) {
+          const dt = (now - prevPosRef.current.ts) / 1000;
+          if (dt > 0.5 && dt < 30) {
+            const dist = haversine(latitude, longitude, prevPosRef.current.lat, prevPosRef.current.lng);
+            const speedKmh = (dist / dt) * 3.6;
+            if (speedKmh < 400) useTimerStore.getState().setSpeed(speedKmh);
+          }
+        }
+        prevPosRef.current = { lat: latitude, lng: longitude, ts: now };
 
         // Auto start/stop based on GPS proximity with state machine
         const ts = useTimerStore.getState();

@@ -51,7 +51,7 @@ export default function BottomPanel() {
   } = useRouteStore();
 
   // Timer store
-  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, start, stop, tick, reset, toggleAutoMode } = useTimerStore();
+  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, currentSpeed, maxSpeed, start, stop, tick, reset, toggleAutoMode } = useTimerStore();
   const { lat: gpsLat, lng: gpsLng } = useLocationStore();
 
   // Records store
@@ -275,6 +275,27 @@ export default function BottomPanel() {
                   {status === 'idle' ? '就绪' : status === 'running' ? '计时中' : '已停止'}
                 </div>
               </div>
+
+              {/* Speed display */}
+              {status === 'running' && currentSpeed !== null && (
+                <div className="flex items-center justify-center gap-4 py-1">
+                  <div className="text-center">
+                    <span className="tabular-nums text-[28px] font-bold text-[var(--text-primary)]">
+                      {Math.round(currentSpeed)}
+                    </span>
+                    <span className="text-[13px] text-[var(--text-secondary)] ml-0.5">km/h</span>
+                  </div>
+                  {maxSpeed !== null && (
+                    <div className="text-center">
+                      <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">最高</div>
+                      <span className="tabular-nums text-[15px] font-semibold" style={{ color: 'var(--accent)' }}>
+                        {Math.round(maxSpeed)}
+                        <span className="text-[11px] font-normal ml-0.5" style={{ color: 'var(--text-tertiary)' }}>km/h</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Auto mode toggle */}
               <button

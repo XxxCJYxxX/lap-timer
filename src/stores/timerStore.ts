@@ -15,6 +15,8 @@ interface TimerState {
   autoMode: boolean;
   autoPhase: AutoPhase;
   distanceToTarget: number | null;
+  currentSpeed: number | null; // km/h
+  maxSpeed: number | null; // km/h
 
   start: () => void;
   tick: () => void;
@@ -23,6 +25,7 @@ interface TimerState {
   toggleAutoMode: () => void;
   setDistance: (d: number | null) => void;
   setAutoPhase: (p: AutoPhase) => void;
+  setSpeed: (kmh: number) => void;
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
@@ -34,12 +37,14 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   autoMode: false,
   autoPhase: 'waiting_start',
   distanceToTarget: null,
+  currentSpeed: null,
+  maxSpeed: null,
 
   start: () => {
     set({
       status: 'running', startTime: performance.now(), elapsed: 0,
       lastRecord: null, lastRecordColor: null,
-      autoPhase: 'leaving_start',
+      autoPhase: 'leaving_start', currentSpeed: null, maxSpeed: null,
     });
   },
 
@@ -92,4 +97,9 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   setDistance: (d) => set({ distanceToTarget: d }),
 
   setAutoPhase: (p) => set({ autoPhase: p }),
+
+  setSpeed: (kmh) => set((s) => ({
+    currentSpeed: kmh,
+    maxSpeed: s.maxSpeed === null ? kmh : Math.max(s.maxSpeed, kmh),
+  })),
 }));
