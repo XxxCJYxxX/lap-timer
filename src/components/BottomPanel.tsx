@@ -276,22 +276,34 @@ export default function BottomPanel() {
                 </div>
               </div>
 
-              {/* Speed display */}
+              {/* Speed gauge */}
               {status === 'running' && currentSpeed !== null && (
-                <div className="flex items-center justify-center gap-4 py-1">
-                  <div className="text-center">
-                    <span className="tabular-nums text-[28px] font-bold text-[var(--text-primary)]">
-                      {Math.round(currentSpeed)}
-                    </span>
-                    <span className="text-[13px] text-[var(--text-secondary)] ml-0.5">km/h</span>
+                <div className="flex items-center justify-center gap-4 py-2">
+                  {/* Circular gauge */}
+                  <div className="speed-gauge" style={{ width: 72, height: 72 }}>
+                    <svg viewBox="0 0 72 72" width="72" height="72">
+                      <circle className="speed-gauge-ring" cx="36" cy="36" r="30" />
+                      <circle
+                        className="speed-gauge-fill"
+                        cx="36" cy="36" r="30"
+                        strokeDasharray={`${Math.min(currentSpeed / 200 * 188.5, 188.5)} 188.5`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="tabular-nums text-[20px] font-bold leading-none text-[var(--text-primary)]">
+                        {Math.round(currentSpeed)}
+                      </span>
+                      <span className="text-[9px] font-medium text-[var(--text-tertiary)] leading-tight">km/h</span>
+                    </div>
                   </div>
+                  {/* Max speed badge */}
                   {maxSpeed !== null && (
                     <div className="text-center">
-                      <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider">最高</div>
-                      <span className="tabular-nums text-[15px] font-semibold" style={{ color: 'var(--accent)' }}>
-                        {Math.round(maxSpeed)}
-                        <span className="text-[11px] font-normal ml-0.5" style={{ color: 'var(--text-tertiary)' }}>km/h</span>
-                      </span>
+                      <div className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">最高</div>
+                      <div className="flex items-baseline justify-center gap-0.5" style={{ color: 'var(--accent)' }}>
+                        <span className="tabular-nums text-[22px] font-bold leading-none">{Math.round(maxSpeed)}</span>
+                        <span className="text-[11px] font-medium" style={{ color: 'var(--text-tertiary)' }}>km/h</span>
+                      </div>
                     </div>
                   )}
                 </div>

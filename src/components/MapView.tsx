@@ -65,6 +65,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const isFollowingRef = useRef(false);
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const prevPosRef = useRef<{ lat: number; lng: number; ts: number } | null>(null);
+  const lastGpsUpdateRef = useRef<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
 
   const { isCreating, createStep, draftStart, draftFinish, activeRouteId, routes, setStart, setFinish } = useRouteStore();
 
@@ -198,6 +199,22 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
 
   const startLocationWatch = () => {
     if (!navigator.geolocation) { setLocationError('设备不支持定位'); return; }
+
+    // Speed calculation helper (also used by throttled path)
+    const updateSpeed = (pos: GeolocationPosition) => {
+      const { latitude, longitude } = pos.coords;
+      const now = pos.timestamp;
+      if (prevPosRef.current) {
+        const dt = (now - prevPosRef.current.ts) / 1000;
+        if (dt > 0.5 && dt < 30) {
+          const dist = haversine(latitude, longitude, prevPosRef.current.lat, prevPosRef.current.lng);
+          const speedKmh = (dist / dt) * 3.6;
+          if (speedKmh < 400) useTimerStore.getState().setSpeed(speedKmh);
+        }
+      }
+      prevPosRef.current = { lat: latitude, lng: longitude, ts: now };
+    };
+
     isFollowingRef.current = true;
     locationWatchId.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -205,6 +222,16 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
         if (!map) return;
         const { latitude, longitude, accuracy } = pos.coords;
         const [lng, lat] = toDisplayCoords(longitude, latitude);
+
+        // Throttle: skip if position changed < 5m (battery saving)
+        const last = lastGpsUpdateRef.current;
+        const moved = haversine(latitude, longitude, last.lat, last.lng);
+        if (moved < 5 && locationMarkerRef.current) {
+          // Still update speed but skip marker redraw
+          updateSpeed(pos);
+          return;
+        }
+        lastGpsUpdateRef.current = { lat: latitude, lng: longitude };
         if (!locationMarkerRef.current) {
           locationMarkerRef.current = L.marker([lat, lng], { icon: LOCATION_ICON, zIndexOffset: 1000 }).addTo(map);
         } else {
@@ -224,20 +251,9 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
         setIsLocating(true);
         setLocationError(null);
 
-        // Update shared location for "use current location" feature
+        // Update shared location + calculate speed
         useLocationStore.getState().setPosition(latitude, longitude, accuracy);
-
-        // Calculate speed from consecutive GPS positions
-        const now = pos.timestamp;
-        if (prevPosRef.current) {
-          const dt = (now - prevPosRef.current.ts) / 1000;
-          if (dt > 0.5 && dt < 30) {
-            const dist = haversine(latitude, longitude, prevPosRef.current.lat, prevPosRef.current.lng);
-            const speedKmh = (dist / dt) * 3.6;
-            if (speedKmh < 400) useTimerStore.getState().setSpeed(speedKmh);
-          }
-        }
-        prevPosRef.current = { lat: latitude, lng: longitude, ts: now };
+        updateSpeed(pos);
 
         // Auto start/stop based on GPS proximity with state machine
         const ts = useTimerStore.getState();
