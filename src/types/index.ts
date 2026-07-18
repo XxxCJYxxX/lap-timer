@@ -10,10 +10,20 @@ export interface Route {
   createdAt: number;
 }
 
+export interface Weather {
+  temp: number;
+  humidity: number;
+  windSpeed: number;
+  weatherCode: number;
+  weatherDesc: string;
+}
+
 export interface LapRecord {
   id?: number;
   routeId: number;
   timeMs: number;
+  splits: number[];
+  weather?: Weather;
   timestamp: number;
 }
 

@@ -6,6 +6,7 @@ import { useLocationStore } from '../stores/locationStore';
 import { toStorageCoords } from '../utils/coord';
 import { COLOR_MAP } from '../utils/color';
 import { downloadRoute } from '../utils/routeIO';
+import { encodePolyline, decodePolyline } from '../utils/seedcode';
 import { db } from '../db/db';
 import type { RecordColor } from '../types';
 
@@ -51,11 +52,11 @@ export default function BottomPanel() {
     routes, activeRouteId, isCreating, createStep,
     draftWaypoints,
     loadRoutes, setActiveRoute, startCreate, saveRoute, cancelCreate, deleteRoute,
-    undoWaypoint, setFinish,
+    undoWaypoint, setFinish, reverseRoute,
   } = useRouteStore();
 
   // Timer store
-  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, currentSpeed, maxSpeed, lightPhase, stop, tick, reset, toggleAutoMode, beginStartSequence } = useTimerStore();
+  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, currentSpeed, maxSpeed, lightPhase, splits, weather, stop, tick, reset, toggleAutoMode, beginStartSequence, captureSplit } = useTimerStore();
   const { lat: gpsLat, lng: gpsLng } = useLocationStore();
 
   // Records store
@@ -138,16 +139,36 @@ export default function BottomPanel() {
         <div className="space-y-2 custom-scrollbar max-h-[340px] overflow-y-auto">
           {/* Route actions */}
           {!isCreating && (
-            <div className="flex justify-between items-center gap-2">
-              <span className="text-[13px] font-medium text-[var(--text-secondary)]">
-                {routes.length} 条路线
-              </span>
-              <div className="flex gap-1.5">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-[13px] font-medium text-[var(--text-secondary)]">{routes.length} 条路线</span>
+                <div className="flex gap-1.5">
+                  <button onClick={startCreate} className="btn btn-sm btn-primary">+ 新建</button>
+                </div>
+              </div>
+              {/* Seed code + import */}
+              <div className="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  placeholder="粘贴种子码导入…"
+                  className="input-apple h-8 text-[12px]"
+                  onKeyDown={async (e) => {
+                    if (e.key !== 'Enter') return;
+                    const code = (e.target as HTMLInputElement).value.trim();
+                    if (!code) return;
+                    try {
+                      const wps = decodePolyline(code);
+                      if (wps.length < 2) { alert('无效的种子码'); return; }
+                      (e.target as HTMLInputElement).value = '';
+                      const id = await db.routes.add({ name: `导入路线 ${new Date().toLocaleDateString()}`, waypoints: wps, createdAt: Date.now() });
+                      loadRoutes(); setActiveRoute(id); setTab('timer');
+                    } catch { alert('种子码格式错误'); }
+                  }}
+                />
                 <input ref={fileInputRef} type="file" accept=".json,.laproute.json" onChange={handleImport} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-ghost" title="导入路线">
+                <button onClick={() => fileInputRef.current?.click()} className="btn btn-sm btn-ghost shrink-0" title="导入JSON文件">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </button>
-                <button onClick={startCreate} className="btn btn-sm btn-primary">+ 新建</button>
               </div>
             </div>
           )}
@@ -235,9 +256,25 @@ export default function BottomPanel() {
                     onClick={(e) => { e.stopPropagation(); downloadRoute(route); }}
                     className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
                     style={{ color: 'var(--text-tertiary)' }}
-                    title="导出路线"
+                    title="导出"
                   >
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2v8M3 7l4 4 4-4M1 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); reverseRoute(route.id!); }}
+                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    title="反跑"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9 2l4 4-4 4M13 6H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button
+                    onClick={async (e) => { e.stopPropagation(); await navigator.clipboard.writeText(encodePolyline(route.waypoints)); }}
+                    className="w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    title="复制种子码"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="3" y="3" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 10V3a2 2 0 012-2h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                   </button>
                   <button
                     onClick={(e) => {
@@ -398,14 +435,36 @@ export default function BottomPanel() {
                   </button>
                 )}
                 {status === 'running' && (
-                  <button onClick={() => stop()} className="btn btn-danger flex-1">
-                    停表
-                  </button>
+                  <>
+                    <button onClick={captureSplit} className="btn btn-ghost flex-1">分段</button>
+                    <button onClick={() => stop()} className="btn btn-danger flex-1">停表</button>
+                  </>
                 )}
                 {status === 'stopped' && (
                   <button onClick={reset} className="btn btn-ghost flex-1">重置</button>
                 )}
               </div>
+
+              {/* Live splits during run */}
+              {status === 'running' && splits.length > 0 && (
+                <div className="space-y-1">
+                  {splits.map((t, i) => (
+                    <div key={i} className="flex justify-between px-3 py-1.5 rounded-lg text-[12px]" style={{ background: 'rgba(118,118,128,0.1)' }}>
+                      <span style={{ color: 'var(--text-tertiary)' }}>S{i + 1}</span>
+                      <span className="font-mono font-medium" style={{ color: 'var(--text-primary)' }}>{formatTimeShort(t)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Weather badge */}
+              {weather && (
+                <div className="flex items-center gap-2 px-2 py-1 rounded-lg text-[11px]" style={{ background: 'rgba(118,118,128,0.08)' }}>
+                  <span style={{ color: 'var(--text-tertiary)' }}>🌡 {weather.temp}°</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>{weather.weatherDesc}</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>💨 {weather.windSpeed}km/h</span>
+                </div>
+              )}
 
               {/* Last result */}
               {lastRecord && colorMeta && (
@@ -466,6 +525,7 @@ export default function BottomPanel() {
                     >
                       <span className="tabular-nums text-[15px] font-medium" style={{ color: color ? textMap[color] : 'var(--text-primary)' }}>
                         {formatTimeShort(record.timeMs)}
+                        {record.weather && <span className="ml-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>{record.weather.weatherDesc} {record.weather.temp}°</span>}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] text-[var(--text-tertiary)]">

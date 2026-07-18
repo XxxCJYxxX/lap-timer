@@ -21,6 +21,7 @@ interface RouteState {
   saveRoute: (name: string) => Promise<Route>;
   cancelCreate: () => void;
   deleteRoute: (id: number) => Promise<void>;
+  reverseRoute: (id: number) => Promise<void>;
   getActiveRoute: () => Route | undefined;
 }
 
@@ -90,6 +91,18 @@ export const useRouteStore = create<RouteState>((set, get) => ({
       routes: s.routes.filter((r) => r.id !== id),
       activeRouteId: s.activeRouteId === id ? null : s.activeRouteId,
     }));
+  },
+
+  reverseRoute: async (id) => {
+    const route = get().routes.find((r) => r.id === id);
+    if (!route) return;
+    const reversed: Route = {
+      name: route.name + ' (反)',
+      waypoints: [...route.waypoints].reverse(),
+      createdAt: Date.now(),
+    };
+    const newId = await db.routes.add(reversed);
+    set((s) => ({ routes: [{ ...reversed, id: newId }, ...s.routes] }));
   },
 
   getActiveRoute: () => {

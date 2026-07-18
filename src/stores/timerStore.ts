@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { db } from '../db/db';
 import { computeColor } from '../utils/color';
+import { fetchWeather } from '../utils/weather';
 import { useRouteStore } from './routeStore';
-import type { TimerStatus, LapRecord } from '../types';
+import type { TimerStatus, LapRecord, Weather } from '../types';
 
 type AutoPhase = 'waiting_start' | 'leaving_start' | 'heading_to_finish';
 export type LightPhase = 'idle' | 'light1' | 'light2' | 'light3' | 'light4' | 'light5' | 'go';
@@ -20,9 +21,13 @@ interface TimerState {
   maxSpeed: number | null;
   lightPhase: LightPhase;
   followMode: boolean;
+  splits: number[];
+  splitStartTime: number | null;
+  weather: Weather | null;
 
   start: () => void;
   tick: () => void;
+  captureSplit: () => void;
   stop: () => Promise<LapRecord | null>;
   reset: () => void;
   toggleAutoMode: () => void;
@@ -32,6 +37,7 @@ interface TimerState {
   setLightPhase: (p: LightPhase) => void;
   setFollowMode: (v: boolean) => void;
   beginStartSequence: () => void;
+  _fetchWeather: () => Promise<void>;
 }
 
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
@@ -49,13 +55,18 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   maxSpeed: null,
   lightPhase: 'idle',
   followMode: false,
+  splits: [],
+  splitStartTime: null,
+  weather: null,
 
   start: () => {
+    get()._fetchWeather();
     set({
       status: 'running', startTime: performance.now(), elapsed: 0,
       lastRecord: null, lastRecordColor: null,
       autoPhase: 'leaving_start', currentSpeed: null, maxSpeed: null,
       lightPhase: 'idle', followMode: true,
+      splits: [], splitStartTime: performance.now(), weather: null,
     });
   },
 
@@ -65,28 +76,45 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({ elapsed: performance.now() - startTime });
   },
 
+  captureSplit: () => {
+    const { status, splitStartTime } = get();
+    if (status !== 'running' || !splitStartTime) return;
+    const now = performance.now();
+    set((s) => ({
+      splits: [...s.splits, Math.round(now - splitStartTime)],
+      splitStartTime: now,
+    }));
+  },
+
   stop: async () => {
-    const { startTime } = get();
+    const { startTime, splits, splitStartTime, weather } = get();
     if (!startTime) return null;
 
     const elapsed = performance.now() - startTime;
     const timeMs = Math.round(elapsed);
 
+    // Capture final split if there's an active segment
+    const finalSplits = [...splits];
+    if (splitStartTime !== null) {
+      finalSplits.push(Math.round(performance.now() - splitStartTime));
+    }
+
     const activeId = useRouteStore.getState().activeRouteId;
     if (!activeId) {
-      set({ status: 'idle', startTime: null, elapsed: 0, autoPhase: 'waiting_start', followMode: false });
+      set({ status: 'idle', startTime: null, elapsed: 0, autoPhase: 'waiting_start', followMode: false, splits: [], splitStartTime: null });
       return null;
     }
 
     const existing = await db.records.where('routeId').equals(activeId).toArray();
     const color = existing.length === 0 ? 'purple' : computeColor(existing, timeMs);
 
-    const record: LapRecord = { routeId: activeId, timeMs, timestamp: Date.now() };
+    const record: LapRecord = { routeId: activeId, timeMs, splits: finalSplits, weather: weather ?? undefined, timestamp: Date.now() };
     const id = await db.records.add(record);
     set({
       status: 'stopped', startTime: null, elapsed,
       lastRecord: { ...record, id }, lastRecordColor: color,
       autoPhase: 'waiting_start', followMode: false,
+      splits: finalSplits, splitStartTime: null,
     });
 
     return { ...record, id };
@@ -98,6 +126,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       lastRecord: null, lastRecordColor: null,
       distanceToTarget: null, autoPhase: 'waiting_start',
       lightPhase: 'idle', followMode: false,
+      splits: [], splitStartTime: null, weather: null,
     });
   },
 
@@ -124,10 +153,17 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       await sleep(600);
       get().setLightPhase(phases[i]);
     }
-    // 五灯全亮后随机 0.5~2 秒，全灭=起跑
     await sleep(500 + Math.random() * 1500);
     get().setLightPhase('go');
     await sleep(80);
     get().start();
+  },
+
+  _fetchWeather: async () => {
+    const route = useRouteStore.getState().getActiveRoute();
+    if (!route || route.waypoints.length === 0) return;
+    const wp = route.waypoints[0];
+    const w = await fetchWeather(wp.lat, wp.lng);
+    if (w) set({ weather: w });
   },
 }));
