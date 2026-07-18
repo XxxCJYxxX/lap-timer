@@ -254,13 +254,12 @@ export default function BottomPanel() {
               {/* Timer display */}
               <div className="text-center py-2">
                 <div
-                  className="tabular-nums font-semibold tracking-tighter"
                   style={{
+                    fontFamily: "'SF Mono', 'Menlo', 'Courier New', monospace",
                     fontSize: 'clamp(40px, 10vw, 56px)',
                     lineHeight: 1.1,
                     color: status === 'running' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    fontVariantNumeric: 'tabular-nums',
-                    transition: 'color 0.2s ease, font-size 0.2s ease',
+                    letterSpacing: '0.02em',
                   }}
                 >
                   {formatTime(elapsed)}

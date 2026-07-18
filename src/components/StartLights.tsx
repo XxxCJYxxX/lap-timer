@@ -49,24 +49,16 @@ export default function StartLights() {
 
       {/* Status text */}
       <div
-        className="text-center font-bold tracking-wider transition-all duration-300"
+        className="text-center font-semibold tracking-widest transition-all duration-200 font-mono"
         style={{
-          fontSize: isGo ? '32px' : '18px',
-          color: isGo ? '#30D158' : 'rgba(255,255,255,0.7)',
+          fontSize: isGo ? '36px' : '16px',
+          color: isGo ? '#30D158' : 'rgba(255,255,255,0.6)',
           textShadow: isGo ? '0 0 30px rgba(48,209,88,0.6)' : 'none',
+          fontFamily: "'SF Mono', 'Menlo', monospace",
         }}
       >
-        {isGo ? 'GO!' : `灯 ${activeCount}/5`}
+        {isGo ? '● ● ● ● ●' : `●`.repeat(activeCount) + `○`.repeat(5 - activeCount)}
       </div>
-
-      {isGo && (
-        <div
-          className="mt-3 text-[14px] font-medium animate-pulse"
-          style={{ color: 'rgba(255,255,255,0.4)' }}
-        >
-          计时开始
-        </div>
-      )}
     </div>
   );
 }

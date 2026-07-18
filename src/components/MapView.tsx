@@ -66,6 +66,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const prevPosRef = useRef<{ lat: number; lng: number; ts: number } | null>(null);
   const lastGpsUpdateRef = useRef<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
+  const lastDisplayPosRef = useRef<[number, number]>([39.9042, 116.4074]);
 
   const { isCreating, createStep, draftWaypoints, activeRouteId, routes, addWaypoint } = useRouteStore();
   const followMode = useTimerStore((s) => s.followMode);
@@ -251,6 +252,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
           return;
         }
         lastGpsUpdateRef.current = { lat: latitude, lng: longitude };
+        lastDisplayPosRef.current = [lat, lng];
         if (!locationMarkerRef.current) {
           locationMarkerRef.current = L.marker([lat, lng], { icon: LOCATION_ICON, zIndexOffset: 1000 }).addTo(map);
         } else {
@@ -360,12 +362,12 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
 
   useEffect(() => { return () => stopLocationWatch(); }, []);
 
-  // Follow mode: zoom in when timer starts, zoom out when stopped
+  // Follow mode: zoom to GPS + follow
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (followMode) {
-      map.setZoom(17, { animate: true });
+      map.flyTo(lastDisplayPosRef.current, 17, { duration: 0.6 });
       isFollowingRef.current = true;
     } else {
       isFollowingRef.current = false;
