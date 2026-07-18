@@ -121,13 +121,13 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     const phases: LightPhase[] = ['light1', 'light2', 'light3', 'light4', 'light5'];
     get().setLightPhase('light1');
     for (let i = 1; i < phases.length; i++) {
-      await sleep(800);
+      await sleep(600);
       get().setLightPhase(phases[i]);
     }
-    // After 5 lights lit, random delay 1.5~4s, then all go out
-    await sleep(1500 + Math.random() * 2500);
-    get().setLightPhase('go'); // go = lights out
-    await sleep(100);
+    // 五灯全亮后随机 0.5~2 秒，全灭=起跑
+    await sleep(500 + Math.random() * 1500);
+    get().setLightPhase('go');
+    await sleep(80);
     get().start();
   },
 }));

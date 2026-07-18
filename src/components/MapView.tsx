@@ -268,7 +268,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
             accuracyCircleRef.current.setRadius(accuracy);
           }
         }
-        if (isFollowingRef.current || followMode) map.panTo([lat, lng], { animate: true, duration: 0.3 });
+        if (isFollowingRef.current || followMode) map.setView([lat, lng], map.getZoom(), { animate: false });
         setIsLocating(true);
         setLocationError(null);
 
@@ -367,7 +367,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
     const map = mapRef.current;
     if (!map) return;
     if (followMode) {
-      map.flyTo(lastDisplayPosRef.current, 17, { duration: 0.6 });
+      map.flyTo(lastDisplayPosRef.current, 18, { duration: 0.4 });
       isFollowingRef.current = true;
     } else {
       isFollowingRef.current = false;
