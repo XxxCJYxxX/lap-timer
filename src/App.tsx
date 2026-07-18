@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import MapView from './components/MapView';
 import BottomPanel from './components/BottomPanel';
 import SearchBar from './components/SearchBar';
+import StartLights from './components/StartLights';
 
 interface FlyToTarget {
   lat: number;
@@ -57,6 +58,9 @@ function App() {
         {/* Version */}
         <span className="text-[11px] font-medium text-[var(--text-tertiary)] shrink-0 hidden sm:inline">v0.1</span>
       </header>
+
+      {/* F1 starting lights overlay */}
+      <StartLights />
 
       {/* Bottom glass panel — responsive */}
       <div

@@ -5,6 +5,7 @@ import { useRouteStore } from './routeStore';
 import type { TimerStatus, LapRecord } from '../types';
 
 type AutoPhase = 'waiting_start' | 'leaving_start' | 'heading_to_finish';
+export type LightPhase = 'idle' | 'light1' | 'light2' | 'light3' | 'light4' | 'light5' | 'go';
 
 interface TimerState {
   status: TimerStatus;
@@ -15,8 +16,10 @@ interface TimerState {
   autoMode: boolean;
   autoPhase: AutoPhase;
   distanceToTarget: number | null;
-  currentSpeed: number | null; // km/h
-  maxSpeed: number | null; // km/h
+  currentSpeed: number | null;
+  maxSpeed: number | null;
+  lightPhase: LightPhase;
+  followMode: boolean;
 
   start: () => void;
   tick: () => void;
@@ -26,7 +29,12 @@ interface TimerState {
   setDistance: (d: number | null) => void;
   setAutoPhase: (p: AutoPhase) => void;
   setSpeed: (kmh: number) => void;
+  setLightPhase: (p: LightPhase) => void;
+  setFollowMode: (v: boolean) => void;
+  beginStartSequence: () => void;
 }
+
+function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
   status: 'idle',
@@ -39,12 +47,15 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   distanceToTarget: null,
   currentSpeed: null,
   maxSpeed: null,
+  lightPhase: 'idle',
+  followMode: false,
 
   start: () => {
     set({
       status: 'running', startTime: performance.now(), elapsed: 0,
       lastRecord: null, lastRecordColor: null,
       autoPhase: 'leaving_start', currentSpeed: null, maxSpeed: null,
+      lightPhase: 'idle', followMode: true,
     });
   },
 
@@ -63,7 +74,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
     const activeId = useRouteStore.getState().activeRouteId;
     if (!activeId) {
-      set({ status: 'idle', startTime: null, elapsed: 0, autoPhase: 'waiting_start' });
+      set({ status: 'idle', startTime: null, elapsed: 0, autoPhase: 'waiting_start', followMode: false });
       return null;
     }
 
@@ -75,7 +86,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({
       status: 'stopped', startTime: null, elapsed,
       lastRecord: { ...record, id }, lastRecordColor: color,
-      autoPhase: 'waiting_start',
+      autoPhase: 'waiting_start', followMode: false,
     });
 
     return { ...record, id };
@@ -86,6 +97,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       status: 'idle', startTime: null, elapsed: 0,
       lastRecord: null, lastRecordColor: null,
       distanceToTarget: null, autoPhase: 'waiting_start',
+      lightPhase: 'idle', followMode: false,
     });
   },
 
@@ -95,11 +107,24 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   setDistance: (d) => set({ distanceToTarget: d }),
-
   setAutoPhase: (p) => set({ autoPhase: p }),
 
   setSpeed: (kmh) => set((s) => ({
     currentSpeed: kmh,
     maxSpeed: s.maxSpeed === null ? kmh : Math.max(s.maxSpeed, kmh),
   })),
+
+  setLightPhase: (p) => set({ lightPhase: p }),
+  setFollowMode: (v) => set({ followMode: v }),
+
+  beginStartSequence: async () => {
+    const phases: LightPhase[] = ['light1', 'light2', 'light3', 'light4', 'light5', 'go'];
+    get().setLightPhase('light1');
+    for (let i = 1; i < phases.length; i++) {
+      await sleep(800);
+      get().setLightPhase(phases[i]);
+    }
+    await sleep(200);
+    get().start();
+  },
 }));

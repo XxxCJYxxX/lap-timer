@@ -68,6 +68,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const lastGpsUpdateRef = useRef<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
 
   const { isCreating, createStep, draftWaypoints, activeRouteId, routes, addWaypoint } = useRouteStore();
+  const followMode = useTimerStore((s) => s.followMode);
 
   const [/* provider */, setProviderState] = useState<TileProvider>(getTileProvider());
   const [isLocating, setIsLocating] = useState(false);
@@ -265,7 +266,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
             accuracyCircleRef.current.setRadius(accuracy);
           }
         }
-        if (isFollowingRef.current) map.panTo([lat, lng], { animate: true, duration: 0.3 });
+        if (isFollowingRef.current || followMode) map.panTo([lat, lng], { animate: true, duration: 0.3 });
         setIsLocating(true);
         setLocationError(null);
 
@@ -358,6 +359,18 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   };
 
   useEffect(() => { return () => stopLocationWatch(); }, []);
+
+  // Follow mode: zoom in when timer starts, zoom out when stopped
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (followMode) {
+      map.setZoom(17, { animate: true });
+      isFollowingRef.current = true;
+    } else {
+      isFollowingRef.current = false;
+    }
+  }, [followMode]);
 
   // ── Search / flyTo ──
   useEffect(() => {

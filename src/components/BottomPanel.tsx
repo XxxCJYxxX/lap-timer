@@ -53,7 +53,7 @@ export default function BottomPanel() {
   } = useRouteStore();
 
   // Timer store
-  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, currentSpeed, maxSpeed, start, stop, tick, reset, toggleAutoMode } = useTimerStore();
+  const { status, elapsed, lastRecord, lastRecordColor, autoMode, autoPhase, distanceToTarget, currentSpeed, maxSpeed, lightPhase, stop, tick, reset, toggleAutoMode, beginStartSequence } = useTimerStore();
   const { lat: gpsLat, lng: gpsLng } = useLocationStore();
 
   // Records store
@@ -364,8 +364,8 @@ export default function BottomPanel() {
 
               {/* Controls */}
               <div className="flex gap-2">
-                {status === 'idle' && (
-                  <button onClick={start} className="btn btn-primary flex-1" style={{ background: 'var(--green)', color: '#000' }}>
+                {status === 'idle' && lightPhase === 'idle' && (
+                  <button onClick={beginStartSequence} className="btn btn-primary flex-1" style={{ background: 'var(--green)', color: '#000' }}>
                     启表
                   </button>
                 )}
