@@ -149,7 +149,7 @@ export default function BottomPanel() {
 
       {/* ── Routes Tab ── */}
       {tab === 'routes' && (
-        <div className="space-y-2 custom-scrollbar max-h-[340px] overflow-y-auto">
+        <div className="space-y-2 custom-scrollbar max-h-[min(340px,38vh)] overflow-y-auto">
           {/* Route actions */}
           {!isCreating && (
             <div className="space-y-2">
@@ -520,7 +520,7 @@ export default function BottomPanel() {
 
       {/* ── Records Tab ── */}
       {tab === 'records' && (
-        <div className="space-y-2 custom-scrollbar max-h-[340px] overflow-y-auto">
+        <div className="space-y-2 custom-scrollbar max-h-[min(340px,38vh)] overflow-y-auto">
           {!activeRoute ? (
             <p className="text-center text-[13px] text-[var(--text-tertiary)] py-8">请先选择路线</p>
           ) : records.length === 0 ? (

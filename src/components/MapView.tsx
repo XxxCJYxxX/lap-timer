@@ -128,6 +128,9 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
   const [/* provider */, setProviderState] = useState<TileProvider>(getTileProvider());
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [layerMenuOpen, setLayerMenuOpen] = useState(false);
+  const [activeLayerName, setActiveLayerName] = useState('高德地图');
+  const currentBaseLayerRef = useRef<L.Layer>(amapRoadLayer);
 
   // Init map
   useEffect(() => {
@@ -141,19 +144,7 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
       layers: [amapRoadLayer],
     });
 
-    // Glass-styled zoom control
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    // Layer switcher
-    const layerControl = L.control.layers(BASE_LAYERS, undefined, { position: 'topright' });
-    layerControl.addTo(map);
-
-    map.on('baselayerchange', (e: any) => {
-      const newProvider: TileProvider = e.name.startsWith('高德') ? 'amap' : 'osm';
-      setTileProvider(newProvider);
-      setProviderState(newProvider);
-      refreshMarkers();
-    });
+    // No native controls — Apple Maps style: gestures for zoom, custom stack for the rest
 
     // Detect manual pan to disable follow
     map.on('dragstart', () => {
@@ -484,26 +475,74 @@ export default function MapView({ flyTo, onFlyComplete }: Props) {
     // flyTo consumed
   }, [flyTo]);
 
+  // Switch base layer (custom control, Apple Maps style)
+  const switchLayer = (name: string) => {
+    const map = mapRef.current;
+    const layer = BASE_LAYERS[name];
+    if (!map || !layer || layer === currentBaseLayerRef.current) { setLayerMenuOpen(false); return; }
+    map.removeLayer(currentBaseLayerRef.current);
+    map.addLayer(layer);
+    currentBaseLayerRef.current = layer;
+    setActiveLayerName(name);
+    const newProvider: TileProvider = name.startsWith('高德') ? 'amap' : 'osm';
+    setTileProvider(newProvider);
+    setProviderState(newProvider);
+    refreshMarkers();
+    setLayerMenuOpen(false);
+  };
+
   return (
     <div ref={containerRef} className="w-full h-full">
-      {/* Locate button - floating on map */}
-      <div className="absolute z-[1000] flex flex-col gap-2" style={{ bottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', right: 'max(12px, env(safe-area-inset-right, 0px) + 4px)' }}>
+      {/* Control stack — Apple Maps style, top-right below header */}
+      <div className="map-control-stack">
         <button
           onClick={toggleLocation}
-          className={`locate-btn ${isLocating ? 'active' : ''}`}
+          className={`map-ctl-btn ${isLocating ? 'active' : ''}`}
           title={isLocating ? '停止定位' : '定位我的位置'}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="3.5" stroke={isLocating ? '#fff' : 'rgba(255,255,255,0.6)'} strokeWidth="1.8" />
-            <circle cx="10" cy="10" r="1.2" fill={isLocating ? '#fff' : 'rgba(255,255,255,0.6)'} />
-            <path d="M10 1v3M10 16v3M1 10h3M16 10h3" stroke={isLocating ? '#fff' : 'rgba(255,255,255,0.4)'} strokeWidth="1.2" strokeLinecap="round" />
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+            <circle cx="10" cy="10" r="1.2" fill="currentColor" />
+            <path d="M10 1v3M10 16v3M1 10h3M16 10h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
+          </svg>
+        </button>
+        <div className="map-ctl-divider" />
+        <button
+          onClick={() => setLayerMenuOpen((v) => !v)}
+          className={`map-ctl-btn ${layerMenuOpen ? 'active' : ''}`}
+          title="切换底图"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L2 6.5 10 11l8-4.5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M2 10l8 4.5 8-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" opacity="0.55" />
+            <path d="M2 13.5L10 18l8-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" opacity="0.3" />
           </svg>
         </button>
       </div>
 
+      {/* Layer menu */}
+      {layerMenuOpen && (
+        <div className="map-layer-menu glass-strong">
+          {Object.keys(BASE_LAYERS).map((name) => (
+            <button
+              key={name}
+              onClick={() => switchLayer(name)}
+              className="map-layer-item"
+              style={{
+                color: name === activeLayerName ? 'var(--accent)' : 'var(--text-primary)',
+                fontWeight: name === activeLayerName ? 600 : 400,
+              }}
+            >
+              {name === activeLayerName && <span style={{ fontSize: 11 }}>✓</span>}
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Location error toast */}
       {locationError && (
-        <div className="absolute top-16 left-4 right-4 z-[1000] px-4 py-3 rounded-2xl glass-strong text-[13px] text-[#FF453A] font-medium shadow-lg text-center max-w-sm mx-auto leading-relaxed">
+        <div className="absolute z-[1000] px-4 py-3 rounded-2xl glass-strong text-[13px] text-[#FF453A] font-medium shadow-lg text-center max-w-sm mx-auto leading-relaxed" style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))', left: 16, right: 16 }}>
           {locationError}
         </div>
       )}

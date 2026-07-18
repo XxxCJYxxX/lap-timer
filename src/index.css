@@ -143,23 +143,68 @@ body {
   .btn-sm { height: 36px; min-height: 36px; padding: 0 14px; font-size: 14px; }
 }
 
-/* ── Locate button ── */
-.locate-btn {
-  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
-  border-radius: 22px;
+/* ── Map control stack (Apple Maps style) ── */
+.map-control-stack {
+  position: absolute;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px) + 4px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: transform 0.1s ease, background 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  touch-action: manipulation;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  overflow: hidden;
   transform: translateZ(0);
 }
-.locate-btn:active { transform: scale(0.92) translateZ(0); }
-.locate-btn.active { background: var(--accent); border-color: var(--accent); }
+
+.map-ctl-btn {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.12s ease, color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.map-ctl-btn:active { background: rgba(255,255,255,0.12); }
+.map-ctl-btn.active { color: var(--accent); }
+
+.map-ctl-divider {
+  height: 0.5px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 8px;
+}
+
+.map-layer-menu {
+  position: absolute;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  right: calc(max(10px, env(safe-area-inset-right, 0px) + 4px) + 52px);
+  z-index: 1001;
+  border-radius: 14px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 150px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.map-layer-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s ease;
+}
+.map-layer-item:active { background: rgba(255,255,255,0.1); }
 
 /* ── Input ── */
 .input-apple {
@@ -184,27 +229,7 @@ body {
   -webkit-transform: translateZ(0);
   touch-action: none;
 }
-.leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important; }
-.leaflet-control-zoom a {
-  width: 44px !important; height: 44px !important; line-height: 44px !important;
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  color: var(--text-primary) !important;
-  border: 1px solid var(--glass-border) !important;
-  font-size: 18px !important; font-weight: 400 !important;
-  touch-action: manipulation;
-}
-.leaflet-control-zoom a:first-child { border-radius: 8px 8px 0 0 !important; }
-.leaflet-control-zoom a:last-child { border-radius: 0 0 8px 8px !important; }
 .leaflet-control-attribution { display: none !important; }
-.leaflet-control-layers {
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border) !important;
-  border-radius: 10px !important;
-  color: var(--text-primary) !important; font-size: 13px !important;
-}
 
 /* ── Scrollbar ── */
 .custom-scrollbar::-webkit-scrollbar { width: 3px; }
@@ -285,16 +310,6 @@ body {
   .glass, .glass-strong {
     backdrop-filter: blur(12px) saturate(150%);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
-  }
-  /* Compact locate button */
-  .locate-btn {
-    width: 40px; height: 40px;
-    min-width: 40px; min-height: 40px;
-  }
-  /* Smaller zoom controls */
-  .leaflet-control-zoom a {
-    width: 40px !important; height: 40px !important;
-    line-height: 40px !important;
   }
 }
 
