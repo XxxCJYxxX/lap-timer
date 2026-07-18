@@ -75,7 +75,7 @@ function App() {
           right: 'max(12px, env(safe-area-inset-right, 0px) + 4px)',
         }}
       >
-        <div className="p-3 sm:p-4">
+        <div className="p-2.5 sm:p-4">
           <BottomPanel />
         </div>
       </div>

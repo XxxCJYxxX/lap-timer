@@ -116,7 +116,7 @@ export default function BottomPanel() {
   return (
     <>
       {/* Segmented control */}
-      <div className="flex justify-center mb-3">
+      <div className="flex justify-center mb-2">
         <div className="segmented">
           {([
             { key: 'routes', label: '路线' },
@@ -301,7 +301,7 @@ export default function BottomPanel() {
 
       {/* ── Timer Tab ── */}
       {tab === 'timer' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {!activeRoute ? (
             <div className="text-center py-8">
               <div className="text-[40px] mb-2">🏎️</div>
@@ -309,38 +309,44 @@ export default function BottomPanel() {
             </div>
           ) : (
             <>
-              {/* Route badge */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(191,90,242,0.1)', width: 'fit-content' }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-purple)]" />
-                <span className="text-[12px] font-medium truncate" style={{ color: 'var(--accent-purple)' }}>
-                  {activeRoute.name}
-                </span>
+              {/* Route badge + weather */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full min-w-0" style={{ background: 'rgba(191,90,242,0.1)' }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-purple)] shrink-0" />
+                  <span className="text-[12px] font-medium truncate" style={{ color: 'var(--accent-purple)' }}>
+                    {activeRoute.name}
+                  </span>
+                </div>
+                {weather && (
+                  <span className="text-[11px] shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+                    {weather.weatherDesc} {weather.temp}° 💨{weather.windSpeed}
+                  </span>
+                )}
               </div>
 
               {/* Timer display */}
-              <div className="text-center py-2">
+              <div className="text-center">
                 <div
                   style={{
                     fontFamily: "'SF Mono', 'Menlo', 'Courier New', monospace",
-                    fontSize: 'clamp(40px, 10vw, 56px)',
-                    lineHeight: 1.1,
+                    fontSize: 'clamp(34px, 9vw, 52px)',
+                    lineHeight: 1.05,
                     color: status === 'running' ? 'var(--text-primary)' : 'var(--text-secondary)',
                     letterSpacing: '0.02em',
                   }}
                 >
                   {formatTime(elapsed)}
                 </div>
-                <div className="text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-widest mt-1">
+                <div className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-widest">
                   {status === 'idle' ? '就绪' : status === 'running' ? '计时中' : '已停止'}
                 </div>
               </div>
 
-              {/* Speed gauge */}
+              {/* Speed — compact */}
               {status === 'running' && currentSpeed !== null && (
-                <div className="flex items-center justify-center gap-4 py-2">
-                  {/* Circular gauge */}
-                  <div className="speed-gauge" style={{ width: 72, height: 72 }}>
-                    <svg viewBox="0 0 72 72" width="72" height="72">
+                <div className="flex items-center justify-center gap-4">
+                  <div className="speed-gauge" style={{ width: 56, height: 56 }}>
+                    <svg viewBox="0 0 72 72" width="56" height="56">
                       <circle className="speed-gauge-ring" cx="36" cy="36" r="30" />
                       <circle
                         className="speed-gauge-fill"
@@ -349,19 +355,18 @@ export default function BottomPanel() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="tabular-nums text-[20px] font-bold leading-none text-[var(--text-primary)]">
+                      <span className="tabular-nums text-[16px] font-bold leading-none text-[var(--text-primary)]">
                         {Math.round(currentSpeed)}
                       </span>
-                      <span className="text-[9px] font-medium text-[var(--text-tertiary)] leading-tight">km/h</span>
+                      <span className="text-[8px] font-medium text-[var(--text-tertiary)] leading-tight">km/h</span>
                     </div>
                   </div>
-                  {/* Max speed badge */}
                   {maxSpeed !== null && (
                     <div className="text-center">
-                      <div className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">最高</div>
+                      <div className="text-[9px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">最高</div>
                       <div className="flex items-baseline justify-center gap-0.5" style={{ color: 'var(--accent)' }}>
-                        <span className="tabular-nums text-[22px] font-bold leading-none">{Math.round(maxSpeed)}</span>
-                        <span className="text-[11px] font-medium" style={{ color: 'var(--text-tertiary)' }}>km/h</span>
+                        <span className="tabular-nums text-[18px] font-bold leading-none">{Math.round(maxSpeed)}</span>
+                        <span className="text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>km/h</span>
                       </div>
                     </div>
                   )}
@@ -371,7 +376,7 @@ export default function BottomPanel() {
               {/* Auto mode toggle */}
               <button
                 onClick={toggleAutoMode}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all"
+                className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all"
                 style={{
                   background: autoMode ? 'rgba(10,132,255,0.15)' : 'rgba(118,118,128,0.08)',
                   border: autoMode ? '1px solid rgba(10,132,255,0.3)' : '1px solid transparent',
@@ -391,7 +396,7 @@ export default function BottomPanel() {
 
               {/* Auto phase indicator */}
               {autoMode && (
-                <div className="flex items-center justify-center gap-1.5 py-1">
+                <div className="flex items-center justify-center gap-1.5">
                   {autoPhase === 'waiting_start' && (
                     <span className="text-[11px] text-[var(--text-tertiary)]">
                       📍 靠近发车点以自动启表
@@ -457,26 +462,17 @@ export default function BottomPanel() {
                 </div>
               )}
 
-              {/* Weather badge */}
-              {weather && (
-                <div className="flex items-center gap-2 px-2 py-1 rounded-lg text-[11px]" style={{ background: 'rgba(118,118,128,0.08)' }}>
-                  <span style={{ color: 'var(--text-tertiary)' }}>🌡 {weather.temp}°</span>
-                  <span style={{ color: 'var(--text-tertiary)' }}>{weather.weatherDesc}</span>
-                  <span style={{ color: 'var(--text-tertiary)' }}>💨 {weather.windSpeed}km/h</span>
-                </div>
-              )}
-
               {/* Last result */}
               {lastRecord && colorMeta && (
-                <div className="p-4 rounded-2xl flex items-center gap-3" style={{ background: `${colorMeta.bg === 'bg-purple-500/20' ? 'rgba(191,90,242,0.12)' : colorMeta.bg === 'bg-green-500/20' ? 'rgba(48,209,88,0.12)' : 'rgba(255,214,10,0.12)'}` }}>
-                  <div className="text-2xl">
+                <div className="p-3 rounded-2xl flex items-center gap-2.5" style={{ background: `${colorMeta.bg === 'bg-purple-500/20' ? 'rgba(191,90,242,0.12)' : colorMeta.bg === 'bg-green-500/20' ? 'rgba(48,209,88,0.12)' : 'rgba(255,214,10,0.12)'}` }}>
+                  <div className="text-xl">
                     {lastRecordColor === 'purple' ? '🟣' : lastRecordColor === 'green' ? '🟢' : '🟡'}
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold" style={{ color: `var(--${lastRecordColor === 'purple' ? 'accent-purple' : lastRecordColor === 'green' ? 'green' : 'yellow'})` }}>
+                    <div className="text-[12px] font-semibold" style={{ color: `var(--${lastRecordColor === 'purple' ? 'accent-purple' : lastRecordColor === 'green' ? 'green' : 'yellow'})` }}>
                       {colorMeta.label}
                     </div>
-                    <div className="tabular-nums text-[20px] font-semibold text-[var(--text-primary)]">
+                    <div className="tabular-nums text-[18px] font-semibold text-[var(--text-primary)]">
                       {formatTime(lastRecord.timeMs)}
                     </div>
                   </div>
