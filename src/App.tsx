@@ -67,7 +67,6 @@ function App() {
           WebkitBackdropFilter: 'blur(30px) saturate(180%)',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.05) inset',
-          bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           left: 'max(12px, env(safe-area-inset-left, 0px) + 4px)',
           right: 'max(12px, env(safe-area-inset-right, 0px) + 4px)',
         }}
